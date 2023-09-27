@@ -1,0 +1,264 @@
+//Upload Image Init properties
+    private lateinit var activityResultLauncher :ActivityResultLauncher<Intent>
+    private lateinit var permissionLauncher: ActivityResultLauncher<String>
+
+        registerLauncher()
+
+
+fun uploadProfilePhoto(v:View) {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+
+            if (ContextCompat.checkSelfPermission(this@ProfileActivity, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this@ProfileActivity,Manifest.permission.READ_MEDIA_IMAGES)) {
+                    Snackbar.make(v, "Permission Needed for Gallery", Snackbar.LENGTH_INDEFINITE).setAction("Give Permission",View.OnClickListener {
+                        //request permission
+                        permissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
+                    }).show()
+                } else {
+                    //request permission
+                    permissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
+
+                }
+
+            } else {
+                // go to Gallery
+                val intentFromGallery = Intent(Intent.ACTION_PICK,MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                activityResultLauncher.launch(intentFromGallery)
+            }
+
+
+
+        }
+
+
+    }
+
+    private fun registerLauncher() {
+
+        activityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult(), ActivityResultCallback {
+
+            if (it.resultCode == RESULT_OK) {
+                val intentFromResult = it.data
+
+                if (intentFromResult != null) {
+                    imageUri = intentFromResult.data
+                    binding.photoIV.setImageURI(imageUri)
+                }
+            }
+
+        })
+
+
+
+        permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission(), ActivityResultCallback {
+
+            if (it) {
+                val intentFromGallery = Intent(Intent.ACTION_PICK,MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                activityResultLauncher.launch(intentFromGallery)
+
+            } else {
+                Toast.makeText(this@ProfileActivity, "Permission Needed For Gallery",Toast.LENGTH_LONG).show()
+            }
+        })
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if(resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_PHOTO) {
+            storeImage(data?.data)
+        }
+    }
+
+    fun storeImage(imageUri: Uri?) {
+        imageUri?.let {
+            Toast.makeText(this, "Uploading...", Toast.LENGTH_SHORT).show()
+            binding.profileProgressLayout.visibility = View.VISIBLE
+
+            val filePath = firebaseStorage.child(DATA_IMAGES).child(userId!!)
+            filePath.putFile(imageUri)
+                .addOnSuccessListener {
+                    filePath.downloadUrl
+                        .addOnSuccessListener {uri ->
+                            val url = uri.toString()
+                            firebaseDB.collection(DATA_USERS).document(userId!!).update(DATA_USER_IMAGE_URL, url)
+                                .addOnSuccessListener {
+                                    imageUrl = url
+                                    binding.photoIV.loadUrl(imageUrl, R.drawable.logo)
+                                }
+                            binding.profileProgressLayout.visibility = View.GONE
+                        }
+                        .addOnFailureListener {
+                            onUploadFailure()
+                        }
+                }
+                .addOnFailureListener {
+                    onUploadFailure()
+                }
+        }
+    }
+
+    fun onUploadFailure() {
+        Toast.makeText(this, "Image upload failed. Please try again later.", Toast.LENGTH_SHORT).show()
+        binding.profileProgressLayout.visibility = View.GONE
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<androidx.appcompat.widget.SearchView
+                android:id="@+id/search"
+                android:layout_width="@dimen/standard_width"
+                android:layout_height="48dp"
+                android:background="@color/light_gray"
+                android:drawableEnd="@android:drawable/ic_menu_search"
+                android:drawableRight="@android:drawable/ic_menu_search"
+                android:hint="@string/hint_search"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:paddingLeft="@dimen/grid_2x"
+                android:paddingRight="@dimen/grid_2x"
+                android:textColorHint="@color/colorPrimary"
+                android:textSize="@color/black">
+
+            </androidx.appcompat.widget.SearchView>
+
+
+
+
+
+
+
+<Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:text="Logout"
+        android:onClick="onLogout"
+        android:id="@+id/button1"/>
+
+
+        class Solution {
+            public String solution (String s)
+
+                return "";
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:layout_constraintTop_toBottomOf="@id/tweetDate"
+                android:orientation="horizontal">
+
+            <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:gravity="center">
+
+                <ImageView
+                        android:id="@+id/tweetLike"
+                        android:layout_width="@dimen/small_image"
+                        android:layout_height="@dimen/small_image"
+                        android:src="@drawable/like_inactive"
+                        android:background="@null"
+                        android:padding="@dimen/grid_1x"
+                        android:scaleType="centerInside"/>
+
+                <TextView
+                        android:id="@+id/tweetLikeCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:paddingLeft="@dimen/grid_2x"
+                        android:textSize="@dimen/standard_text_size"
+                        android:text="0"/>
+            </LinearLayout>
+
+            <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:gravity="center">
+
+                <ImageView
+                        android:id="@+id/tweetRetweet"
+                        android:layout_width="@dimen/small_image"
+                        android:layout_height="@dimen/small_image"
+                        android:src="@drawable/retweet_inactive"
+                        android:background="@null"
+                        android:padding="@dimen/grid_1x"
+                        android:scaleType="centerInside"/>
+
+                <TextView
+                        android:id="@+id/tweetRetweetCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:paddingLeft="@dimen/grid_2x"
+                        android:textSize="@dimen/standard_text_size"
+                        android:text="0"/>
+            </LinearLayout>
+        </LinearLayout>
